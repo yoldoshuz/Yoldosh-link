@@ -4,7 +4,19 @@ function validatePhone(phone: string) {
     return /^\+[1-9]\d{7,14}$/.test(phone);
 }
 
+const BOT_REGEX =
+    /TelegramBot|facebookexternalhit|Twitterbot|Slackbot|WhatsApp|Discordbot/i;
+
 export async function proxy(req: NextRequest) {
+    const ua = req.headers.get('user-agent') || '';
+    const isBot = BOT_REGEX.test(ua);
+
+    // БОТАМ НЕ ДАЕМ УЙТИ В REDIRECT CHAIN
+    // ИНАЧЕ ОНИ ТАЩАТ МЕТАДАННЫЕ ИЗ yoldosh.uz/ru ИЛИ /en
+    if (isBot) {
+        return NextResponse.redirect('https://yoldosh.uz/uz');
+    }
+
     const { pathname } = req.nextUrl;
 
     const raw = pathname.replace('/go/', '');
@@ -24,14 +36,14 @@ export async function proxy(req: NextRequest) {
 
     const location = res.headers.get('location');
 
-    console.log("location", location);
+    console.log('location', location);
 
     if (!location) {
-        console.log("failed going to fallback");
+        console.log('failed going to fallback');
         return NextResponse.redirect('https://app.yoldosh.uz');
     }
 
-    console.log("success going to location");
+    console.log('success going to location');
     return NextResponse.redirect(location);
 }
 
